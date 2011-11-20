@@ -1,4 +1,4 @@
-/* 
+/*
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -65,7 +65,7 @@ int write_to_file(char *path, char *value)
 {
   FILE  *fd;
   int   res = 0;
-  
+
   fd = fopen(path, "w");
   if (fd == NULL)
     return -1;
@@ -79,7 +79,7 @@ int read_from_file(char *path, int len, char *result)
 {
   FILE *fd;
   int res = 0;
-  
+
   fd = fopen(path, "r");
   if (fd == NULL)
     return -1;
@@ -92,7 +92,7 @@ int read_from_file(char *path, int len, char *result)
 int set_cpu_params(char *governor, char *min_freq, char *max_freq)
 {
     if (write_to_file(SYS_CGOV_C0, governor) != 0)
-      return -1; 
+      return -1;
     if (write_to_file(SYS_CMAX_C0, max_freq) != 0)
       return -1;
     if (write_to_file(SYS_CMIN_C0, min_freq) != 0)
@@ -106,7 +106,7 @@ int set_cpu_params(char *governor, char *min_freq, char *max_freq)
     buf[0] = 0;
     strcat(buf, "Setting CPU Params: Governor=");
     my_trim(governor);
-    strcat(buf, governor);  
+    strcat(buf, governor);
     strcat(buf, " min_freq=");
     my_trim(min_freq);
     strcat(buf, min_freq);
@@ -120,7 +120,7 @@ int set_cpu_params(char *governor, char *min_freq, char *max_freq)
 int get_config_value(char *config_key, char *reference)
 {
     char config_path[60];
-    
+
     strcpy(config_path, CONFIG_ROOT);
     strcat(config_path, config_key);
 
@@ -128,7 +128,7 @@ int get_config_value(char *config_key, char *reference)
 }
 
 int  load_config(ocConfig *conf)
-{      
+{
   if (conf == NULL)
     return -1;
   if (get_config_value("wake_min_freq", conf->wake_min_freq) == -1)
@@ -181,23 +181,23 @@ int main (int argc, char **argv)
 {
   ocConfig  conf;
   pid_t pid, sid;
-  char input_buffer[9];    
-  
+  char input_buffer[9];
+
   __android_log_write(ANDROID_LOG_INFO, APPNAME, "Starting service.");
   if (load_config(&conf) == -1)
-  {          
+  {
     __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to load configuration. Stopping.");
     return 1;
   }
   input_buffer[0] = 0;
-    
+
   pid = fork();
   if (pid < 0)
     exit(2);
   if (pid > 0)
     exit(0);
   umask(0);
-  
+
   sid = setsid();
   if (sid < 0)
     exit(2);
@@ -206,11 +206,11 @@ int main (int argc, char **argv)
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
   close(STDERR_FILENO);
-    
+
   while (1)
   {
     if (read_from_file(SYS_WAKE, 6, input_buffer) == -1)
-    {                  
+    {
       __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
       return 1;
     }
@@ -222,15 +222,15 @@ int main (int argc, char **argv)
       set_cpu_params(conf.wake_governor, conf.wake_min_freq, conf.wake_max_freq);
       //set_cpu1_online(0);
     }
-    
+
     input_buffer[0] = '\0';
-      
+
     if (read_from_file(SYS_SLEEP, 9, input_buffer) == -1)
-    {              
+    {
       __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
       return 1;
     }
-    
+
     if (strcmp(input_buffer, "sleeping") == 0)
     {
       __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting sleep profile.");
