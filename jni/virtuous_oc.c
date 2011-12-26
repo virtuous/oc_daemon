@@ -149,34 +149,36 @@ int  load_config(ocConfig *conf)
 
 int wait_for_cpu1_online()
 {
- struct stat file_info;
- int i=0;
- while(0 != stat(SYS_CMAX_C1, &file_info) && i < 20)
-{
-  usleep(50000);
-  i++;
-}
- if(i == 20)
-  return 1;
+  struct stat file_info;
 
- return 0;
+  int i=0;
+  while(0 != stat(SYS_CMAX_C1, &file_info) && i < 20)
+  {
+    usleep(50000);
+    i++;
+  }
+  if(i == 20)
+    return 1;
+
+  return 0;
 }
 
 int set_cpu1_online(int online)
 {
- if(online)
-{
+  if(online)
+  {
+    write_to_file(SYS_ONLI_C1, "1");
 
-  write_to_file(SYS_ONLI_C1, "1");
-
-  if(0 != wait_for_cpu1_online())
-   return 1;
-
-}
- else
-  write_to_file(SYS_ONLI_C1, "0");
-
- return 0;
+    if(0 != wait_for_cpu1_online())
+      return 1;
+    else
+      return 0;
+  }
+  else
+  {
+    write_to_file(SYS_ONLI_C1, "0");
+    return 0;
+  }
 }
 
 int main (int argc, char **argv)
@@ -186,11 +188,13 @@ int main (int argc, char **argv)
   char input_buffer[9];
 
   __android_log_write(ANDROID_LOG_INFO, APPNAME, "Starting service.");
+
   if (load_config(&conf) == -1)
   {
     __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to load configuration. Stopping.");
     return 1;
   }
+
   input_buffer[0] = 0;
 
   pid = fork();
@@ -216,13 +220,15 @@ int main (int argc, char **argv)
       __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
       return 1;
     }
+
     if (strcmp(input_buffer, "awake") == 0)
     {
       __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting awake profile.");
+
       if(0 !=set_cpu1_online(1))
-      __android_log_write(ANDROID_LOG_INFO, APPNAME, "Failed setting awake profile for cpu1.");
+        __android_log_write(ANDROID_LOG_INFO, APPNAME, "Failed setting awake profile for cpu1.");
+
       set_cpu_params(conf.wake_governor, conf.wake_min_freq, conf.wake_max_freq);
-      //set_cpu1_online(0);
     }
 
     input_buffer[0] = '\0';
@@ -236,10 +242,13 @@ int main (int argc, char **argv)
     if (strcmp(input_buffer, "sleeping") == 0)
     {
       __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting sleep profile.");
+
       set_cpu1_online(0);
       set_cpu_params(conf.sleep_governor, conf.sleep_min_freq, conf.sleep_max_freq);
     }
+
     input_buffer[0] = '\0';
   }
+
   return 0;
 }
