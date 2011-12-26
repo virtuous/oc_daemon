@@ -166,10 +166,12 @@ int set_cpu1_online(int online)
 {
  if(online)
 {
+
+  write_to_file(SYS_ONLI_C1, "1");
+
   if(0 != wait_for_cpu1_online())
    return 1;
 
-  write_to_file(SYS_ONLI_C1, "1");
 }
  else
   write_to_file(SYS_ONLI_C1, "0");
@@ -234,6 +236,7 @@ int main (int argc, char **argv)
     if (strcmp(input_buffer, "sleeping") == 0)
     {
       __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting sleep profile.");
+      set_cpu1_online(0);
       set_cpu_params(conf.sleep_governor, conf.sleep_min_freq, conf.sleep_max_freq);
     }
     input_buffer[0] = '\0';
