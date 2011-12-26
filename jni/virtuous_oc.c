@@ -44,59 +44,59 @@
 
 typedef struct s_ocConfig
 {
-  char wake_min_freq[30];
-  char wake_max_freq[30];
-  char wake_governor[30];
+    char wake_min_freq[30];
+    char wake_max_freq[30];
+    char wake_governor[30];
 
-  char sleep_min_freq[30];
-  char sleep_max_freq[30];
-  char sleep_governor[30];
+    char sleep_min_freq[30];
+    char sleep_max_freq[30];
+    char sleep_governor[30];
 } ocConfig;
 
 void my_trim(char *str)
 {
-  int i;
-  for (i = 0; str[i] != 0; i++)
-    if ((str[i] == '\n' || str[i] == '\r'))
-      str[i] = 0;
+    int i;
+    for (i = 0; str[i] != 0; i++)
+        if ((str[i] == '\n' || str[i] == '\r'))
+            str[i] = 0;
 }
 
 int write_to_file(char *path, char *value)
 {
-  FILE  *fd;
-  int   res = 0;
+    FILE  *fd;
+    int   res = 0;
 
-  fd = fopen(path, "w");
-  if (fd == NULL)
-    return -1;
-  if (fputs(value, fd) < 0)
-    res = -1;
-  fclose(fd);
-  return res;
+    fd = fopen(path, "w");
+    if (fd == NULL)
+        return -1;
+    if (fputs(value, fd) < 0)
+        res = -1;
+    fclose(fd);
+    return res;
 }
 
 int read_from_file(char *path, int len, char *result)
 {
-  FILE *fd;
-  int res = 0;
+    FILE *fd;
+    int res = 0;
 
-  fd = fopen(path, "r");
-  if (fd == NULL)
-    return -1;
-  if (fgets(result, len, fd) == NULL)
-    res = -1;
-  fclose(fd);
-  return res;
+    fd = fopen(path, "r");
+    if (fd == NULL)
+        return -1;
+    if (fgets(result, len, fd) == NULL)
+        res = -1;
+    fclose(fd);
+    return res;
 }
 
 int set_cpu_params(char *governor, char *min_freq, char *max_freq)
 {
     if (write_to_file(SYS_CGOV_C0, governor) != 0)
-      return -1;
+        return -1;
     if (write_to_file(SYS_CMAX_C0, max_freq) != 0)
-      return -1;
+        return -1;
     if (write_to_file(SYS_CMIN_C0, min_freq) != 0)
-      return -1;
+        return -1;
 
     write_to_file(SYS_CGOV_C1, governor);
     write_to_file(SYS_CMAX_C1, max_freq);
@@ -129,126 +129,126 @@ int get_config_value(char *config_key, char *reference)
 
 int  load_config(ocConfig *conf)
 {
-  if (conf == NULL)
-    return -1;
-  if (get_config_value("wake_min_freq", conf->wake_min_freq) == -1)
-    return -1;
-  if (get_config_value("wake_max_freq", conf->wake_max_freq) == -1)
-    return -1;
-  if (get_config_value("wake_governor", conf->wake_governor) == -1)
-    return -1;
+    if (conf == NULL)
+        return -1;
+    if (get_config_value("wake_min_freq", conf->wake_min_freq) == -1)
+        return -1;
+    if (get_config_value("wake_max_freq", conf->wake_max_freq) == -1)
+        return -1;
+    if (get_config_value("wake_governor", conf->wake_governor) == -1)
+        return -1;
 
-  if (get_config_value("sleep_min_freq", conf->sleep_min_freq) == -1)
-    return -1;
-  if (get_config_value("sleep_max_freq", conf->sleep_max_freq) == -1)
-    return -1;
-  if (get_config_value("sleep_governor", conf->sleep_governor) == -1)
-    return -1;
-  return 0;
+    if (get_config_value("sleep_min_freq", conf->sleep_min_freq) == -1)
+        return -1;
+    if (get_config_value("sleep_max_freq", conf->sleep_max_freq) == -1)
+        return -1;
+    if (get_config_value("sleep_governor", conf->sleep_governor) == -1)
+        return -1;
+    return 0;
 }
 
 int wait_for_cpu1_online()
 {
-  struct stat file_info;
+    struct stat file_info;
 
-  int i=0;
-  while(0 != stat(SYS_CMAX_C1, &file_info) && i < 20)
-  {
-    usleep(50000);
-    i++;
-  }
-  if(i == 20)
-    return 1;
+    int i=0;
+    while (0 != stat(SYS_CMAX_C1, &file_info) && i < 20)
+    {
+        usleep(50000);
+        i++;
+    }
+    if (i == 20)
+        return 1;
 
-  return 0;
+    return 0;
 }
 
 int set_cpu1_online(int online)
 {
-  if(online)
-  {
-    write_to_file(SYS_ONLI_C1, "1");
+    if (online)
+    {
+        write_to_file(SYS_ONLI_C1, "1");
 
-    if(0 != wait_for_cpu1_online())
-      return 1;
+        if (0 != wait_for_cpu1_online())
+            return 1;
+        else
+            return 0;
+    }
     else
-      return 0;
-  }
-  else
-  {
-    write_to_file(SYS_ONLI_C1, "0");
-    return 0;
-  }
+    {
+        write_to_file(SYS_ONLI_C1, "0");
+        return 0;
+    }
 }
 
 int main (int argc, char **argv)
 {
-  ocConfig  conf;
-  pid_t pid, sid;
-  char input_buffer[9];
+    ocConfig  conf;
+    pid_t pid, sid;
+    char input_buffer[9];
 
-  __android_log_write(ANDROID_LOG_INFO, APPNAME, "Starting service.");
+    __android_log_write(ANDROID_LOG_INFO, APPNAME, "Starting service.");
 
-  if (load_config(&conf) == -1)
-  {
-    __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to load configuration. Stopping.");
-    return 1;
-  }
-
-  input_buffer[0] = 0;
-
-  pid = fork();
-  if (pid < 0)
-    exit(2);
-  if (pid > 0)
-    exit(0);
-  umask(0);
-
-  sid = setsid();
-  if (sid < 0)
-    exit(2);
-  if ((chdir("/")) < 0)
-    exit(2);
-  close(STDIN_FILENO);
-  close(STDOUT_FILENO);
-  close(STDERR_FILENO);
-
-  while (1)
-  {
-    if (read_from_file(SYS_WAKE, 6, input_buffer) == -1)
+    if (load_config(&conf) == -1)
     {
-      __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
-      return 1;
+        __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to load configuration. Stopping.");
+        return 1;
     }
 
-    if (strcmp(input_buffer, "awake") == 0)
+    input_buffer[0] = 0;
+
+    pid = fork();
+    if (pid < 0)
+        exit(2);
+    if (pid > 0)
+        exit(0);
+    umask(0);
+
+    sid = setsid();
+    if (sid < 0)
+        exit(2);
+    if ((chdir("/")) < 0)
+        exit(2);
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    while (1)
     {
-      __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting awake profile.");
+        if (read_from_file(SYS_WAKE, 6, input_buffer) == -1)
+        {
+            __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
+            return 1;
+        }
 
-      if(0 !=set_cpu1_online(1))
-        __android_log_write(ANDROID_LOG_INFO, APPNAME, "Failed setting awake profile for cpu1.");
+        if (strcmp(input_buffer, "awake") == 0)
+        {
+            __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting awake profile.");
 
-      set_cpu_params(conf.wake_governor, conf.wake_min_freq, conf.wake_max_freq);
+            if (0 !=set_cpu1_online(1))
+                __android_log_write(ANDROID_LOG_INFO, APPNAME, "Failed setting awake profile for cpu1.");
+
+            set_cpu_params(conf.wake_governor, conf.wake_min_freq, conf.wake_max_freq);
+        }
+
+        input_buffer[0] = '\0';
+
+        if (read_from_file(SYS_SLEEP, 9, input_buffer) == -1)
+        {
+            __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
+            return 1;
+        }
+
+        if (strcmp(input_buffer, "sleeping") == 0)
+        {
+            __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting sleep profile.");
+
+            set_cpu1_online(0);
+            set_cpu_params(conf.sleep_governor, conf.sleep_min_freq, conf.sleep_max_freq);
+        }
+
+        input_buffer[0] = '\0';
     }
 
-    input_buffer[0] = '\0';
-
-    if (read_from_file(SYS_SLEEP, 9, input_buffer) == -1)
-    {
-      __android_log_write(ANDROID_LOG_ERROR, APPNAME, "Unable to get data from file. Cannot continue.");
-      return 1;
-    }
-
-    if (strcmp(input_buffer, "sleeping") == 0)
-    {
-      __android_log_write(ANDROID_LOG_INFO, APPNAME, "Setting sleep profile.");
-
-      set_cpu1_online(0);
-      set_cpu_params(conf.sleep_governor, conf.sleep_min_freq, conf.sleep_max_freq);
-    }
-
-    input_buffer[0] = '\0';
-  }
-
-  return 0;
+    return 0;
 }
